@@ -1,0 +1,104 @@
+{
+    "Comment": "Update SecurityHub Members",
+    "StartAt": "GetMembers",
+
+    "States": {
+
+        "GetMembers": {
+            "Type": "Task",
+            "TimeoutSeconds": 300,
+            "Resource": "arn:aws:states:::lambda:invoke",
+
+            "InputPath": "$",
+            "ResultPath": "$.ExecutionData",
+            "OutputPath": "$",
+
+            "Parameters": {  
+                "FunctionName": "${GetMembers}",
+                "Payload.$": "$"
+            },
+            "Next": "UpdateMembers"
+        },
+        "UpdateMembers": {
+            "Type": "Map",
+            "InputPath": "$.ExecutionData.Payload",
+            "ItemsPath": "$.accounts",
+            "Parameters": {  
+                "account.$": "$$.Map.Item.Value",
+                "exceptions.$": "$.exceptions"
+            },
+            "OutputPath": "$",
+            "MaxConcurrency": 3,
+            "Iterator": {
+                "StartAt": "UpdateMember",
+                "States": {
+                    "UpdateMember": {
+                        "Type": "Task",
+                        "Resource": "arn:aws:states:::lambda:invoke",
+                        "Parameters": {  
+                            "FunctionName": "${UpdateMember}",
+                            "Payload.$": "$"
+                        },
+                        "OutputPath": "$.Payload",
+                        "Retry": [
+                            {
+                            "ErrorEquals": [
+                                "TimeOut"
+                            ],
+                            "IntervalSeconds": 1,
+                            "BackoffRate": 2,
+                            "MaxAttempts": 3
+                            }
+                        ],
+                        "End": true
+                    }
+                }
+            },
+            "ResultPath": "$.detail.processedItems",
+            "Next": "CheckResult"
+        },
+        "CheckResult": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "InputPath": "$.detail",
+            "Parameters": {  
+                "FunctionName": "${CheckResult}",
+                "Payload.$": "$"
+            },
+            "Next": "Evaluate"
+        },
+        "Evaluate": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.Payload.statusCode",
+                    "NumericEquals": 500,
+                    "Next": "SendSNS"
+                }
+            ],
+            "Default": "PipelineSucceed"
+        },
+        "SendSNS": {
+            "Type": "Task",
+            "TimeoutSeconds": 300,
+            "Resource": "arn:aws:states:::sns:publish",
+
+            "InputPath": "$",
+            "ResultPath": "$.ExecutionData",
+            "OutputPath": "$",
+
+            "Parameters": {  
+                "TopicArn": "${StateMachineFailureSNSTopic}",
+                "Message.$": "$.Payload.failed_accounts"
+            },
+            "Next": "PipelineFailed"
+        },
+        "PipelineFailed": {
+            "Type": "Fail",
+            "Cause": "At least one account could not be updated."
+        },
+        "PipelineSucceed": {
+            "Type": "Succeed"
+        }
+    }
+}

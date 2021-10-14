@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Cross Account IAM role in each member account to automate SecurityHub update controls
+
+Parameters:
+  SecurityHubAdminAccountId:
+    Type: String
+    MaxLength: 12
+    MinLength: 12
+    Description: 12 digit account id of SecurityHub Administrator account
+  IAMRolePath:
+    Type: String
+    Default: "/"
+    Description: Path for IAM Role
+  IAMRoleName:
+    Type: String
+    Default: "securityhub-UpdateControl-role"
+    Description: Name of IAM Role
+
+Resources:
+  AssumeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref IAMRoleName
+      Path: !Ref IAMRolePath
+      Policies:
+          - PolicyName: "UpdateSecurityHub"
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                Effect: Allow
+                Action:
+                  - securityhub:Get*
+                  - securityhub:List*
+                  - securityhub:Describe*
+                  - securityhub:UpdateStandardsControl
+                  - securityhub:BatchDisableStandards
+                  - securityhub:BatchEnableStandards
+                Resource: "*"
+      AssumeRolePolicyDocument:
+        #add trust policy here
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              "AWS": !Join [ "", [ "arn:aws:iam::", !Ref SecurityHubAdminAccountId, ":root" ] ]
+            Action: sts:AssumeRole
+
+Outputs:
+  IAMRoleArn:
+    Value: !GetAtt AssumeRole.Arn
