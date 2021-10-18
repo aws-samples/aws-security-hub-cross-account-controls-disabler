@@ -8,6 +8,7 @@
   - [Security Hub administrator account](#security-hub-administrator-account)
 - [Usage](#usage)
   - [Setting exceptions](#setting-exceptions)
+  - [Security Hub Controls CLI](#security-hub-controls-cli)
 - [Workflow and Troubleshooting](#workflow-and-troubleshooting)
 - [Customization](#customization)
 
@@ -89,7 +90,7 @@ After deployment, the solution runs automatically based on the following two tri
   The Scheduled Trigger makes sure, that new accounts are updated by this solution after they get added as a Security Hub member account. Also, it propagates the status of the controls which were already disabled before the solutions was deployed to all existing member accounts.
 * Event Trigger  
   The state machine is triggered each time a control is disabled/enabled in the Security Hub administrator account. The state of the Event Trigger can be controlled by the `EventTriggerState` parameter during deployment.  
-  ***Limitation***: *If a lot of controls are changed in a very short timeframe, the Event Trigger causes multiple parallel executions which may lead to API throttling and thus failure of the execution.*
+  ***Limitation***: *If a lot of controls are changed in a very short timeframe (e.g. when done programmatically via [Security Hub Controls CLI](https://github.com/aws-samples/aws-security-hub-controls-cli)), the Event Trigger causes multiple parallel executions which may lead to API throttling and thus failure of the execution.*
 
 ### Setting exceptions
 The DynamoDB table deployed in the SecurityHub administrator account can be filled with exceptions. If an exception is defined for an account, the account will be updated as specified in the exception instead of reflecting the configuration in the SecurityHub Administrator account.
@@ -145,6 +146,9 @@ In this section, the evaluation logic is explained using the following example:
 * CIS.1.4 will be disabled for account `22222222222`, overriding the information fetched from the SecurityHub administrator. No exceptions are defined to enabled this control. `Exception` will be specified in the `update_standards_control` API call when disabling this control for account `22222222222`, since no explicit `DisabledReason` was given.
 * CIS.1.5 specifies the same account in both, `Disabled` and `Enabled` list. This is a conflict and the exception will be ignored. A warning will be logged in the `UpdateMembers` Lambda function and the control for the account `22222222222` will be set as specified in the SecurityHub administrator as a fallback.
 * Any other account and control will be set as specified in the SecurityHub administrator.
+
+### Security Hub Controls CLI
+[Security Hub Controls CLI](https://github.com/aws-samples/aws-security-hub-controls-cli) is a CLI tool to disable and enable security standards controls in AWS Security Hub. It also supports the exception handling described [here](#setting-exceptions).
 
 ## Workflow and Troubleshooting
 
