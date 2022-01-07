@@ -25,6 +25,8 @@ The solution consists of the following:
 
 ![Architecture](img/SecurityHubUpdater.png)
 
+**NOTE:** If you want to update controls across multiple accounts NOT managed by a Security Hub administrator then you can use the script provided in this [blog post](https://aws.amazon.com/blogs/security/disabling-security-hub-controls-in-a-multi-account-environment/). 
+
 ## Setup
 
 ### Requirements
