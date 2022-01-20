@@ -47,7 +47,7 @@ Set an arbitrary `<stack-name>` and the Security Hub administrator account ID fo
 aws cloudformation deploy --template-file member-iam-role/template.yaml --capabilities CAPABILITY_NAMED_IAM --stack-name <stack-name> --parameter-overrides SecurityHubAdminAccountId=<AccountID>
 ```
 
-For a more efficient deployment to multiple member accounts at once, AWS CloudFormation StackSets can be used: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/what-is-cfnstacksets.html
+For a more efficient deployment to multiple member accounts at once, [AWS CloudFormation StackSets](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/what-is-cfnstacksets.html) can be used.
 
 #### Parameters
 | Name                      | Description                                                                                       | Default                        |
