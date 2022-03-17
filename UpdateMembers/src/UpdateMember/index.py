@@ -35,13 +35,17 @@ def get_controls(enabled_standards, security_hub_client):
     """ return list of controls for all aneabled standards """
     controls = dict()
     for standard in enabled_standards["StandardsSubscriptions"]:
+        response = security_hub_client.describe_standards_controls(
+            StandardsSubscriptionArn=standard["StandardsSubscriptionArn"])
         controls[
             standard["StandardsArn"]
-        ] = security_hub_client.describe_standards_controls(
-            StandardsSubscriptionArn=standard["StandardsSubscriptionArn"]
-        )[
-            "Controls"
-        ]
+        ] = response["Controls"]
+        
+        while "NextToken" in response:
+            next_token = response["NextToken"]
+            response = security_hub_client.describe_standards_controls(
+            StandardsSubscriptionArn=standard["StandardsSubscriptionArn"], NextToken=next_token)
+            controls[ standard["StandardsArn"] ] = controls[ standard["StandardsArn"] ] + response["Controls"]
     return controls
 
 
