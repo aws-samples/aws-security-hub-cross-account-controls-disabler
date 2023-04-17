@@ -97,6 +97,7 @@ Resources:
                 - securityhub:Get*
                 - securityhub:List*
                 - securityhub:Describe*
+                - organizations:ListAccounts
               Resource: "*"
             - Effect: Allow
               Action:

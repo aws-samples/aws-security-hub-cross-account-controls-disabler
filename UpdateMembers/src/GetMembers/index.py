@@ -8,6 +8,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 DISABLED_REASON = "Exception"
 securityhub_client = None
+organizations_client = None
 dynamodb_client = None
 
 
@@ -21,11 +22,22 @@ def lambda_handler(event, context):
     if not securityhub_client:
         securityhub_client = boto3.client("securityhub")
 
+    global organizations_client
+    if not organizations_client:
+        organizations_client = boto3.client("organizations")
+
     global dynamodb_client
     if not dynamodb_client:
         dynamodb_client = boto3.client("dynamodb")
 
     member_accounts = get_members(securityhub_client)
+    active_accounts = get_active_accounts(organizations_client)
+
+    # Filter out suspended accounts from list of Security Hub member accounts.
+    # This is for robustness because Security Hub shows suspended member accounts as 'Enabled"
+    # when it was suspended without being removed from Security Hub administrator account.
+    member_accounts = list(set(member_accounts).intersection(active_accounts))
+
     response = dynamodb_client.scan(TableName=os.environ["DynamoDB"])
     exceptions = convert_exceptions(response)
 
@@ -103,3 +115,22 @@ def get_members(client):
         accounts.append(member["AccountId"])
     # print(accounts)
     return accounts
+
+def get_active_accounts(client):
+    """
+    Use pagination to fetch list of Organizations member accounts and return list of active(not suspended) accounts
+    """
+    response = client.list_accounts()
+    active_members = []
+
+    while response:
+        for account in response["Accounts"]:
+            if account["Status"] == "ACTIVE":
+                active_members.append(account["Id"])
+
+        if "NextToken" in response:
+            response = client.list_accounts(NextToken=response["NextToken"])
+        else:
+            response = None
+
+    return active_members
