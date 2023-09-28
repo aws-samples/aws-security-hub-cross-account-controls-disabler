@@ -241,8 +241,7 @@ def update_standard_subscription(
             # disable standard
             for subscription in member_enabled_standards["StandardsSubscriptions"]:
                 if (
-                    subscription["StandardsArn"].split("/")[-3]
-                    == standard["StandardsArn"].split("/")[-3]
+                    subscription["StandardsArn"] == standard["StandardsArn"]
                 ):
                     standard_to_be_disabled.append(
                         subscription["StandardsSubscriptionArn"]
